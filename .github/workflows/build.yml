@@ -21,7 +21,8 @@ jobs:
 
       - name: Integrate KernelSU Next
         run: |
-          curl -LSs "https://raw.githubusercontent.com/rifs33/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          git clone --depth=1 https://github.com/rifs33/KernelSU-Next.git KSUN
+          bash KSUN/kernel/setup.sh
 
       - name: Build Kernel
         run: |
@@ -51,4 +52,3 @@ jobs:
         with:
           name: KSUN-Kernel-rubyx
           path: KSUN-Kernel-rubyx.zip
-
