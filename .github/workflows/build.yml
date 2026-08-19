@@ -13,7 +13,7 @@ jobs:
       - name: Set up Build Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git
+          sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Download Toolchain (Clang)
         run: |
