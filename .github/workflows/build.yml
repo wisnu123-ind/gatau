@@ -25,6 +25,11 @@ jobs:
           export GIT_TERMINAL_PROMPT=0
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
+            - name: Fix KernelSU patch_memory error
+        run: |
+          sed -i 's/copy_to_kernel_nofault/probe_kernel_write/g' drivers/kernelsu/hook/arm64/patch_memory.c
+
+
       - name: Build Kernel
         run: |
           export PATH="$(pwd)/clang/bin:$PATH"
