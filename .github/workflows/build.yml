@@ -1,0 +1,48 @@
+name: Build KSUN Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v3
+
+      - name: Set up Build Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git
+
+      - name: Download Toolchain (Clang)
+        run: |
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
+
+      - name: Integrate KernelSU Next
+        run: |
+          curl -LSs "https://raw.githubusercontent.com/rifscall/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+
+      - name: Build Kernel
+        run: |
+          export PATH="$(pwd)/clang/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          
+          mkdir -p out
+          make O=out ruby_defconfig
+          make -j$(nproc --all) O=out CC=clang
+
+      - name: Pack with AnyKernel3
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AK3
+          cp out/arch/arm64/boot/Image.gz-dtb AK3/ || cp out/arch/arm64/boot/Image.gz AK3/ || cp out/arch/arm64/boot/Image AK3/
+          cd AK3
+          zip -r9 ../KSUN-Kernel-rubyx.zip * -x .git* README.md
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KSUN-Kernel-rubyx
+          path: KSUN-Kernel-rubyx.zip
