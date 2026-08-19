@@ -5,17 +5,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # <--- OS DITURUNKAN KE VERSI 20.04 AGAR COCOK DENGAN PROTON CLANG
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
 
-            - name: Set up Build Environment
+      - name: Set up Build Environment
         run: |
-          # Ganti mirror Azure yang bermasalah ke mirror utama Ubuntu
           sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list
-          
-          # Lanjutkan proses update dan install
           sudo apt-get update
           sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi clang lld
 
@@ -26,7 +23,6 @@ jobs:
       - name: Integrate KernelSU Next
         run: |
           export GIT_TERMINAL_PROMPT=0
-          # Patch KernelSU Next (Branch Next) ke Source Kernel
           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Build Kernel
@@ -37,20 +33,16 @@ jobs:
           
           mkdir -p out
           
-          # Mencari defconfig
           DEFCONFIG_FILE=$(find arch/arm64/configs/ -type f \( -name "*ruby*defconfig" -o -name "*mt6877*defconfig" \) | head -n 1 | sed 's|arch/arm64/configs/||')
           echo "Using defconfig: $DEFCONFIG_FILE"
           
-          # Inject config KSU dan KPROBES ke defconfig sebelum build
           echo "CONFIG_KSU=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           echo "CONFIG_KPROBES=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           echo "CONFIG_HAVE_KPROBES=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           echo "CONFIG_KPROBE_EVENTS=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           
-          # Generate config
           make O=out ARCH=arm64 $DEFCONFIG_FILE
           
-          # Proses Kompilasi
           make -j$(nproc --all) O=out ARCH=arm64 \
                CC=clang \
                CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -60,14 +52,9 @@ jobs:
       - name: Pack with AnyKernel3
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AK3
-          
           cp out/arch/arm64/boot/Image.gz-dtb AK3/ || cp out/arch/arm64/boot/Image.gz AK3/ || cp out/arch/arm64/boot/Image AK3/
           cd AK3
-          
-          # Menyesuaikan codename device di anykernel.sh (contoh: ruby)
           sed -i 's/device.name1=maguro/device.name1=ruby/' anykernel.sh
-          
-          # Zip hasil akhir 
           zip -r9 ../KSUN-Kernel-rubyx.zip * -x "*.git*" README.md *placeholder
 
       - name: Upload Kernel Artifact
