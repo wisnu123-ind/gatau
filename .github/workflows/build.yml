@@ -23,7 +23,7 @@ jobs:
       - name: Integrate KernelSU Next
         run: |
           export GIT_TERMINAL_PROMPT=0
-          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/main/kernel/setup.sh" | bash -s main
 
       - name: Fix KernelSU patch_memory error
         run: |
