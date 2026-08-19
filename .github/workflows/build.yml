@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04 # <--- OS DITURUNKAN KE VERSI 20.04 AGAR COCOK DENGAN PROTON CLANG
+    runs-on: ubuntu-22.04 # <--- OS DITURUNKAN KE VERSI 20.04 AGAR COCOK DENGAN PROTON CLANG
     steps:
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
