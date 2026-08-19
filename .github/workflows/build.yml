@@ -15,22 +15,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi clang lld
 
-      - name: Download Toolchain (Clang)
+      - name: Download Toolchain (ZyC Clang)
         run: |
-          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
+          git clone --depth=1 https://gitlab.com/zyc-compiler/zyc-clang.git clang
 
       - name: Integrate KernelSU Next
         run: |
           export GIT_TERMINAL_PROMPT=0
-          
-          # Patch KernelSU Next ke Source Kernel
-          curl -LSs "https://raw.githubusercontent.com/rifs33/KernelSU-Next/next/kernel/setup.sh" | bash - || \
-          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash - || \
-          (
-            git clone --depth=1 https://github.com/tiann/KernelSU.git drivers/kernelsu && \
-            echo 'obj-y += kernelsu/' >> drivers/Makefile && \
-            sed -i '/endmenu/i source "drivers/kernelsu/Kconfig"' drivers/Kconfig
-          )
+          # Patch KernelSU Next (Branch Next) ke Source Kernel
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -
 
       - name: Build Kernel
         run: |
@@ -45,7 +38,7 @@ jobs:
           DEFCONFIG_FILE=$(find arch/arm64/configs/ -type f \( -name "*ruby*defconfig" -o -name "*mt6877*defconfig" \) | head -n 1 | sed 's|arch/arm64/configs/||')
           echo "Using defconfig: $DEFCONFIG_FILE"
           
-          # [PENTING] Inject config KSU dan KPROBES ke defconfig sebelum build
+          # Inject config KSU dan KPROBES ke defconfig sebelum build
           echo "CONFIG_KSU=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           echo "CONFIG_KPROBES=y" >> arch/arm64/configs/$DEFCONFIG_FILE
           echo "CONFIG_HAVE_KPROBES=y" >> arch/arm64/configs/$DEFCONFIG_FILE
@@ -54,7 +47,7 @@ jobs:
           # Generate config
           make O=out ARCH=arm64 $DEFCONFIG_FILE
           
-          # Proses Kompilasi (menggunakan argumen lengkap)
+          # Proses Kompilasi
           make -j$(nproc --all) O=out ARCH=arm64 \
                CC=clang \
                CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -63,20 +56,16 @@ jobs:
                
       - name: Pack with AnyKernel3
         run: |
-          # SANGAT DISARANKAN: Ganti link di bawah dengan AnyKernel3 milikmu yang sudah di-set untuk HP-mu
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AK3
           
           # Memasukkan hasil build ke folder AK3
           cp out/arch/arm64/boot/Image.gz-dtb AK3/ || cp out/arch/arm64/boot/Image.gz AK3/ || cp out/arch/arm64/boot/Image AK3/
           cd AK3
           
-          # SED SEDERHANA UNTUK MENGAKALI ANYKERNEL3 (Hanya contoh, sesuaikan dengan nama partisi HP-mu)
-          # Menyesuaikan codename device (contoh untuk ruby)
+          # Menyesuaikan codename device di anykernel.sh (contoh: ruby)
           sed -i 's/device.name1=maguro/device.name1=ruby/' anykernel.sh
-          # Menyesuaikan block boot (PENTING: cari tahu partisi block boot HP kamu!)
-          # sed -i 's/block=.*/block=\/dev\/block\/by-name\/boot;/' anykernel.sh 
           
-          # Zip hasil akhir (pastikan folder tersembunyi seperti .git ikut dikecualikan)
+          # Zip hasil akhir 
           zip -r9 ../KSUN-Kernel-rubyx.zip * -x "*.git*" README.md *placeholder
 
       - name: Upload Kernel Artifact
