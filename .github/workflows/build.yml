@@ -13,7 +13,7 @@ jobs:
       - name: Set up Build Environment
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi clang lld
 
       - name: Download Toolchain (Clang)
         run: |
@@ -21,7 +21,7 @@ jobs:
 
       - name: Integrate KernelSU Next
         run: |
-          curl -LSs "https://raw.githubusercontent.com/rifscall/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+          curl -LSs "https://raw.githubusercontent.com/rifs33/KernelSU-Next/next/kernel/setup.sh" | bash -s next
 
       - name: Build Kernel
         run: |
@@ -29,10 +29,15 @@ jobs:
           export ARCH=arm64
           export SUBARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
           
           mkdir -p out
-          make O=out ruby_defconfig
-          make -j$(nproc --all) O=out CC=clang
+          
+          DEFCONFIG_FILE=$(find arch/arm64/configs/ -type f \( -name "*ruby*defconfig" -o -name "*mt6877*defconfig" \) | head -n 1 | sed 's|arch/arm64/configs/||')
+          echo "Using defconfig: $DEFCONFIG_FILE"
+          
+          make O=out $DEFCONFIG_FILE
+          make -j$(nproc --all) O=out CC=clang CLANG_TRIPLE=aarch64-linux-gnu-
 
       - name: Pack with AnyKernel3
         run: |
@@ -46,3 +51,4 @@ jobs:
         with:
           name: KSUN-Kernel-rubyx
           path: KSUN-Kernel-rubyx.zip
+
