@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04 # <--- OS DITURUNKAN KE VERSI 20.04 AGAR COCOK DENGAN PROTON CLANG
     steps:
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
@@ -15,9 +15,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential bc libncurses5-dev libssl-dev libelf-dev bison flex zip curl git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi clang lld
 
-      - name: Download Toolchain (ZyC Clang)
+      - name: Download Toolchain (Proton Clang)
         run: |
-          git clone --depth=1 https://gitlab.com/zyc-compiler/zyc-clang.git clang
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang
 
       - name: Integrate KernelSU Next
         run: |
@@ -27,7 +27,6 @@ jobs:
 
       - name: Build Kernel
         run: |
-          # Path toolchain
           export PATH="$(pwd)/clang/bin:$PATH"
           export ARCH=arm64
           export SUBARCH=arm64
@@ -58,7 +57,6 @@ jobs:
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git AK3
           
-          # Memasukkan hasil build ke folder AK3
           cp out/arch/arm64/boot/Image.gz-dtb AK3/ || cp out/arch/arm64/boot/Image.gz AK3/ || cp out/arch/arm64/boot/Image AK3/
           cd AK3
           
